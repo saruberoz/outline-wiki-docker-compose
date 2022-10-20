@@ -11,6 +11,9 @@ data/certs/private.key data/certs/public.crt: env.outline data/certs/dhparam.pem
 env.slack: env.outline
 	@bash generate_conf.sh create_slack_env
 
+env.google: env.outline
+	@bash generate_conf.sh create_google_env
+
 .PHONY: clean install start
 
 https: data/certs/private.key
@@ -19,7 +22,7 @@ https: data/certs/private.key
 init-data-dirs: env.outline
 	@bash generate_conf.sh init_data_dirs
 
-install: env.outline env.minio env.slack init-data-dirs
+install: env.outline env.minio env.slack env.google init-data-dirs
 	@echo "=>run 'make start' and your server should be ready shortly."
 
 start: install

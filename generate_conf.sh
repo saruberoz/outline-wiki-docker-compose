@@ -62,6 +62,28 @@ function create_slack_env {
     env_add SLACK_VERIFICATION_TOKEN ${SLACK_VERIFICATION_TOKEN_INP:-SLACK_VERIFICATION_TOKEN} env.slack
 }
 
+function create_google_env {
+    # get url from outline env
+    set -o allexport; source env.outline; set +o allexport
+    echo "=> To configure Google auth, you'll need to create an OAuth Client ID at"
+    echo "=> https://console.cloud.google.com/apis/credentials"
+    echo "=> When configuring the Client ID, add an Authorized redirect URI:"
+    echo "=> '${URL}/auth/google.callback'"
+
+    read -p "Copy the above to Redirect URLs. Press Enter to continue..."
+
+    if test -f env.google; then
+        set -o allexport; source env.google; set +o allexport
+    fi
+
+    read -p "Enter Google Client ID [$GOOGLE_CLIENT_ID] : " GOOGLE_CLIENT_ID_INP
+    read -p "Enter Google Client Secret [$GOOGLE_CLIENT_SECRET] : " GOOGLE_CLIENT_SECRET_INP
+
+    touch env.google
+    env_add GOOGLE_CLIENT_ID ${GOOGLE_CLIENT_ID_INP:-$GOOGLE_CLIENT_ID} env.google
+    env_add GOOGLE_CLIENT_SECRET ${GOOGLE_CLIENT_SECRET_INP:-$GOOGLE_CLIENT_SECRET} env.google
+}
+
 function create_env_files {
     read -p "Enter hostname [localhost]: " HOST
     HOST=${HOST:-localhost}
@@ -113,11 +135,14 @@ function create_env_files {
     sed "s|outline-bucket|${BUCKET_NAME}|" -i data/nginx/https.conf.disabled
     MINIO_ACCESS_KEY=`openssl rand -hex 8`
     MINIO_SECRET_KEY=`openssl rand -hex 32`
+    MINIO_ROOT_USER="minio-root"
 
     rm -f env.minio
     env_add MINIO_ACCESS_KEY $MINIO_ACCESS_KEY env.minio
     env_add MINIO_SECRET_KEY $MINIO_SECRET_KEY env.minio
-    env_add MINIO_BROWSER off env.minio
+    env_add MINIO_ROOT_USER $MINIO_ROOT_USER env.minio
+    env_add MINIO_ROOT_PASSWORD $MINIO_SECRET_KEY env.minio
+    env_add MINIO_BROWSER on env.minio
 
     env_replace AWS_ACCESS_KEY_ID $MINIO_ACCESS_KEY env.outline
     env_replace AWS_SECRET_ACCESS_KEY $MINIO_SECRET_KEY env.outline
@@ -172,5 +197,6 @@ function init_data_dirs {
     set -o allexport; source env.outline; set +o allexport
     mkdir -p data/minio_root/${AWS_S3_UPLOAD_BUCKET_NAME} data/pgdata
 }
+
 
 $*

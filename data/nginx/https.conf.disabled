@@ -5,6 +5,7 @@ server {
 
     ssl_certificate /etc/ssl/certs/public.crt;
     ssl_certificate_key /etc/ssl/certs/private.key;
+    
     ssl_dhparam /etc/ssl/certs/dhparam.pem;
 
     ########################################################################
@@ -42,6 +43,10 @@ server {
         proxy_pass https://minio:9000;
     }
 
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
     # Proxy any other request to the application server running on port 9001
     location / {
         include /etc/nginx/conf.d/include/proxy.conf;
@@ -52,5 +57,12 @@ server {
 
 server {
     listen 80;
-    return 301 https://$host$request_uri;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
